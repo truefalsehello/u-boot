@@ -420,6 +420,29 @@ __exit:
 		saveenv();
 }
 
+static void bd_check_reset(void)
+{
+	u32 reason;
+
+#define SCR_USER_SIG1_READ		(SCR_ALIVE_BASE + 0x0B4)
+#define SCR_USER_SIG1_RESET		(SCR_ALIVE_BASE + 0x0AC)
+#define RECOVERY_SIGNATURE		(0x52455343)  /* (ASCII) : R.E.S.C */
+#define FASTBOOT_SIGNATURE		(0x46535442)  /* (ASCII) : F.S.T.B */
+
+	reason = readl(SCR_USER_SIG1_READ);
+	debug("signature --> 0x%x\n", reason);
+
+	if (reason == RECOVERY_SIGNATURE) {
+		printf("enter recovery mode\n");
+		writel(0xffffffff, SCR_USER_SIG1_RESET);
+		run_command("setenv initrd_name ramdisk-recovery.img; boot", 0);
+	} else if (reason == FASTBOOT_SIGNATURE) {
+		printf("enter fastboot mode\n");
+		writel(0xffffffff, SCR_USER_SIG1_RESET);
+		run_command("fastboot 0", 0);
+	}
+}
+
 /* --------------------------------------------------------------------------
  * call from u-boot
  */
@@ -465,6 +488,8 @@ int board_late_init(void)
 
 	bd_backlight_on();
 	printf("\n");
+
+	bd_check_reset();
 
 	return 0;
 }
