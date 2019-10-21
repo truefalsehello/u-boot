@@ -684,30 +684,16 @@ parse_fnc_t *parse_part_seqs[] = {
 	0,	/* end */
 };
 
-static inline void part_lists_init(int init)
+static void part_lists_init(void)
 {
 	struct fastboot_device *fd = f_devices;
 	struct fastboot_part *fp;
 	struct list_head *entry, *n;
 	int i = 0;
 
-	for (i = 0; FASTBOOT_DEV_SIZE > i; i++, fd++) {
+	for (i = 0; i < FASTBOOT_DEV_SIZE; i++, fd++) {
 		struct list_head *head = &fd->link;
-		if (head->next == NULL)
-			INIT_LIST_HEAD(head);
-
-		if (init) {
-			if (!list_empty(head)) {
-				debug("delete [%s]:", fd->device);
-				list_for_each_safe(entry, n, head) {
-					fp = list_entry(entry, struct fastboot_part, link);
-					debug("%s ", fp->partition);
-					list_del(entry);
-					free(fp);
-				}
-			}
-			debug("\n");
-
+		if (!head->next) {
 			INIT_LIST_HEAD(head);
 			memset(fd->parts, 0x0, sizeof(FASTBOOT_DEV_PART_MAX*2));
 			continue;
@@ -719,12 +705,14 @@ static inline void part_lists_init(int init)
 		debug("delete [%s]:", fd->device);
 		list_for_each_safe(entry, n, head) {
 			fp = list_entry(entry, struct fastboot_part, link);
-			debug("%s ", fp->partition);
+			debug(" %s", fp->partition);
 			list_del(entry);
 			free(fp);
 		}
 		debug("\n");
+
 		INIT_LIST_HEAD(head);
+		memset(fd->parts, 0x0, sizeof(FASTBOOT_DEV_PART_MAX*2));
 	}
 }
 
@@ -739,7 +727,7 @@ static int part_lists_make(const char *ptable_str, int ptable_str_len)
 	part_num_cnt = 0;
 
 	debug("\n---part_lists_make ---\n");
-	part_lists_init(0);
+	part_lists_init();
 
 	parse_comment(p, &p, len);
 	len -= (int)(p - ptable_str);
@@ -759,6 +747,7 @@ static int part_lists_make(const char *ptable_str, int ptable_str_len)
 			err = -1;
 			break;
 		}
+		memset(fp, 0, sizeof(*fp));
 
 		for (p_fnc_ptr = parse_part_seqs; *p_fnc_ptr; ++p_fnc_ptr) {
 			if ((*p_fnc_ptr)(p, &p, &fd, fp) != 0) {
@@ -772,7 +761,7 @@ static int part_lists_make(const char *ptable_str, int ptable_str_len)
 
 fail_parse:
 	if (err)
-		part_lists_init(0);
+		part_lists_init();
 
 	return err;
 }
@@ -818,7 +807,7 @@ static int part_lists_check(const char *part)
 
 	for (i = 0; FASTBOOT_DEV_SIZE > i; i++, fd++) {
 		struct list_head *head = &fd->link;
-		if (list_empty(head))
+		if (!head->next || list_empty(head))
 			continue;
 		list_for_each_safe(entry, n, head) {
 			fp = list_entry(entry, struct fastboot_part, link);
@@ -1344,6 +1333,8 @@ static void fastboot_disable(struct usb_function *f)
 		usb_ep_free_request(f_fb->in_ep, f_fb->in_req);
 		f_fb->in_req = NULL;
 	}
+
+	part_lists_init();
 }
 
 static struct usb_request *fastboot_start_ep(struct usb_ep *ep)
@@ -1562,13 +1553,14 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		s += strlen("partition-type:");
 		m = getenv("partmap");
 		if (m) {
-			part_lists_init(1);
 			err = part_lists_make(m, strlen(m));
 			if (0 > err)
 				printf("ERR part_lists_make\n");
 			if (part_lists_check(s))
 				strcpy(response, "FAILBad partition");
 			printf("\nReady : ");
+		} else {
+			strcpy(response, "FAILno partmap");
 		}
 		strncat(response, s, chars_left);
 	} else if (!strcmp_l1("product", cmd)) {
@@ -1592,7 +1584,6 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		s = getenv("partmap");
 		if (s) {
 			strncat(response, s, chars_left);
-			part_lists_init(1);
 			err = part_lists_make(s, strlen(s));
 			if (0 > err)
 				printf("ERR part_lists_make\n");
@@ -1602,7 +1593,10 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 			strcpy(response, "FAILPlease set partmap setting");
 		}
 	} else {
-		error("unknown variable: %s\n", cmd);
+		if (getenv_yesno("fastboot_verbose") > 0)
+			error("unknown variable: %s\n", cmd);
+		else
+			debug("unknown variable: %s\n", cmd);
 		strcpy(response, "FAILVariable not implemented");
 	}
 	fastboot_tx_write_str(response);
@@ -1793,8 +1787,7 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 	/* new partition map */
 	if (!strcmp("partmap", cmd)) {
 		const char *p_tmp = (void *)CONFIG_FASTBOOT_BUF_ADDR;
-		part_lists_init(1);
-		char p[512];
+		char p[2048];
 		strncpy(p, p_tmp, download_bytes);
 		if (0 > part_lists_make(p, download_bytes)) {
 			sprintf(response, "FAIL partition map parse");
@@ -1844,27 +1837,34 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 	const char *s;
 	s = getenv("partmap");
 	if (s) {
-		part_lists_init(1);
 		int err = part_lists_make(s, strlen(s));
-		if (0 > err)
+		if (0 > err) {
 			printf("ERR part_lists_make\n");
+			goto err_flash;
+		}
 
-		fb_flash_write_based_partmap(cmd,
-					     (void *)CONFIG_FASTBOOT_BUF_ADDR,
-					     download_bytes, response);
-		goto done_flash;
+		if (!part_lists_check(cmd)) {
+			fb_flash_write_based_partmap(cmd,
+						     (void *)CONFIG_FASTBOOT_BUF_ADDR,
+						     download_bytes, response);
+			goto done_flash;
+		}
 	}
-	strcpy(response, "FAILno flash device defined");
+
+	if (getenv_yesno("fastboot_gpt") > 0) {
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
-	fb_mmc_flash_write(cmd, fastboot_flash_session_id,
-			   (void *)CONFIG_FASTBOOT_BUF_ADDR,
-			   download_bytes, response);
+		fb_mmc_flash_write(cmd, fastboot_flash_session_id,
+				   (void *)CONFIG_FASTBOOT_BUF_ADDR,
+				   download_bytes, response);
 #endif
 #ifdef CONFIG_FASTBOOT_FLASH_NAND_DEV
-	fb_nand_flash_write(cmd, fastboot_flash_session_id,
-			    (void *)CONFIG_FASTBOOT_BUF_ADDR,
-			    download_bytes, response);
+		fb_nand_flash_write(cmd, fastboot_flash_session_id,
+				    (void *)CONFIG_FASTBOOT_BUF_ADDR,
+				    download_bytes, response);
 #endif
+	} else {
+		printf("ERROR: cannot find partition: '%s'\n", cmd);
+	}
 
 err_flash:
 	sprintf(response, "FAIL partition does not exist");
@@ -1872,8 +1872,6 @@ err_flash:
 done_flash:
 	fastboot_flash_session_id++;
 	fastboot_tx_write_str(response);
-
-	part_lists_init(0);
 }
 
 static void cb_oem(struct usb_ep *ep, struct usb_request *req)
