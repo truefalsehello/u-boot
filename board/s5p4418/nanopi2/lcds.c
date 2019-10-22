@@ -254,7 +254,7 @@ static struct nxp_lcd wvga_w500 = {
 		.inv_vsync = 1,
 		.inv_vden = 0,
 	},
-	.gpio_init = s70_gpio_init,
+	.gpio_init = s702_gpio_init,
 };
 
 static struct nxp_lcd wvga_w50 = {
