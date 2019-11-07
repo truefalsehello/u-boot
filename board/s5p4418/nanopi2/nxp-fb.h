@@ -70,6 +70,7 @@ struct nxp_lcd {
 	int	p_height;
 	int	bpp;
 	int	freq;
+	int	dpc_format;
 	struct	nxp_lcd_timing timing;
 	struct	nxp_lcd_polarity polarity;
 	void	(*gpio_init)(void);

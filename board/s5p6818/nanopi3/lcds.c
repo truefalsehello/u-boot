@@ -98,8 +98,8 @@ static void hd700_gpio_init(void)
 static struct nxp_lcd wxga_hd900 = {
 	.width = 1280,
 	.height = 800,
-	.p_width = 151,
-	.p_height = 94,
+	.p_width = 195,
+	.p_height = 122,
 	.bpp = 24,
 	.freq = 60,
 
@@ -119,6 +119,7 @@ static struct nxp_lcd wxga_hd900 = {
 		.inv_vsync = 0,
 		.inv_vden = 0,
 	},
+	.dpc_format = 3,
 	.gpio_init = hd700_gpio_init,
 };
 
@@ -146,6 +147,7 @@ static struct nxp_lcd wxga_hd700 = {
 		.inv_vsync = 0,
 		.inv_vden = 0,
 	},
+	.dpc_format = 3,
 	.gpio_init = hd700_gpio_init,
 };
 
@@ -311,6 +313,33 @@ static struct nxp_lcd wvga_s430 = {
 	.gpio_init = s430_gpio_init,
 };
 
+static struct nxp_lcd wvga_yz43 = {
+	.width= 480,
+	.height = 800,
+	.p_width = 108,
+	.p_height = 64,
+	.bpp = 24,
+	.freq = 60,
+
+	.timing = {
+		.h_fp = 32,
+		.h_bp = 32,
+		.h_sw = 16,
+		.v_fp = 20,
+		.v_fpe = 1,
+		.v_bp = 20,
+		.v_bpe = 1,
+		.v_sw = 4,
+	},
+	.polarity = {
+		.rise_vclk = 0,
+		.inv_hsync = 1,
+		.inv_vsync = 1,
+		.inv_vden = 0,
+	},
+	.dpc_format = 3,
+};
+
 static struct nxp_lcd wsvga_w101 = {
 	.width= 1024,
 	.height = 600,
@@ -361,6 +390,7 @@ static struct nxp_lcd wsvga_x710 = {
 		.inv_vsync = 1,
 		.inv_vden = 0,
 	},
+	.dpc_format = 3,
 	.gpio_init = hd101_gpio_init,
 };
 
@@ -492,6 +522,7 @@ static struct nxp_lcd wxga_hd101 = {
 		.inv_vsync = 0,
 		.inv_vden = 0,
 	},
+	.dpc_format = 3,
 	.gpio_init = hd101_gpio_init,
 };
 
@@ -651,7 +682,7 @@ static struct {
 	{  30, "HD702",	&wxga_hd700, 213, 1, LCD_RGB  },
 	{  34, "HD702",	&wxga_hd700, 213, 1, LCD_VESA },
 	{  33, "H70",	&wxga_hd700, 213, 0, LCD_VESA },
-	{  38, "HD900",	&wxga_hd900, 213, 1, LCD_VESA },
+	{  38, "HD900",	&wxga_hd900, 176, 1, LCD_VESA },
 	{  39, "K101",	&wxga_hd101,   0, 1, LCD_VESA },
 	{   3, "S70",	&wvga_s70,   128, 1, LCD_RGB  },
 	{  36, "S701",	&wvga_s70,   128, 1, LCD_RGB  },
@@ -664,6 +695,7 @@ static struct {
 	{  31, "S430",	&wvga_s430,  180, 1, LCD_RGB  },
 	{  40, "W500",	&wvga_w500,  180, 1, LCD_RGB  },
 	{   4, "W50",	&wvga_w50,     0, 0, LCD_RGB  },
+	{ 100, "YZ43",	&wvga_yz43,  180, 1, LCD_RGB  },
 	{  -1, "U101A",	&wxga_hd101,   0, 1, LCD_VESA },
 
 	/* TODO: Testing */

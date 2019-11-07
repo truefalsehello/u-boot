@@ -173,6 +173,9 @@ int nx_display_fixup_dp(struct nx_display_dev *dp)
 
 	dp->ctrl.clk_div_lv0 = clk;
 
+	if (lcd->dpc_format > 0)
+		dp->ctrl.out_format = lcd->dpc_format;
+
 	dp->top.screen_width = lcd->width;
 	dp->top.screen_height = lcd->height;
 
