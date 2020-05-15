@@ -71,6 +71,14 @@ void bd_hwrev_init(void)
 	pcb_rev  = nx_gpio_get_input_value(__IO_GRP, __IO_PCB1);
 	pcb_rev |= nx_gpio_get_input_value(__IO_GRP, __IO_PCB2) << 1;
 	pcb_rev |= nx_gpio_get_input_value(__IO_GRP, __IO_PCB3) << 2;
+
+	if (pcb_rev == 0x1) {
+		/* GPIOA_9 as input, pull-up */
+		nx_gpio_set_pull_mode(0, 9, 1);
+		udelay(5);
+		if (!nx_gpio_get_input_value(0, 9))
+			pcb_rev |= (1 << 4);
+	}
 }
 
 /* Get extended revision for SmartXX18 */
@@ -115,6 +123,8 @@ const char *get_board_name(void)
 			return "NanoPi Fire 2A";
 		case 7:
 			return "NanoPi M2A";
+		case 0x11:
+			return "SOM-4418";
 		default:
 			return "s5p4418-X";
 	}
