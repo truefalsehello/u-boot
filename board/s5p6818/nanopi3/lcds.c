@@ -289,8 +289,8 @@ static struct nxp_lcd wvga_w50 = {
 static struct nxp_lcd wvga_s430 = {
 	.width= 480,
 	.height = 800,
-	.p_width = 108,
-	.p_height = 64,
+	.p_width = 64,
+	.p_height = 108,
 	.bpp = 24,
 	.freq = 60,
 
@@ -313,11 +313,38 @@ static struct nxp_lcd wvga_s430 = {
 	.gpio_init = s430_gpio_init,
 };
 
+static struct nxp_lcd wvga_s430b = {
+	.width= 480,
+	.height = 800,
+	.p_width = 64,
+	.p_height = 108,
+	.bpp = 24,
+	.freq = 60,
+
+	.timing = {
+		.h_fp = 20,
+		.h_bp = 20,
+		.h_sw = 6,
+		.v_fp = 20,
+		.v_fpe = 1,
+		.v_bp = 20,
+		.v_bpe = 1,
+		.v_sw = 6,
+	},
+	.polarity = {
+		.rise_vclk = 0,
+		.inv_hsync = 1,
+		.inv_vsync = 1,
+		.inv_vden = 0,
+	},
+	.dpc_format = 3,
+};
+
 static struct nxp_lcd wvga_yz43 = {
 	.width= 480,
 	.height = 800,
-	.p_width = 108,
-	.p_height = 64,
+	.p_width = 64,
+	.p_height = 108,
 	.bpp = 24,
 	.freq = 60,
 
@@ -693,6 +720,7 @@ static struct {
 	{   8, "W35",	&qvga_w35,     0, 0, LCD_RGB  },
 	{  28, "X710",	&wsvga_x710,   0, 1, LCD_RGB  },
 	{  31, "S430",	&wvga_s430,  180, 1, LCD_RGB  },
+	{  41, "S430B",	&wvga_s430b, 180, 1, LCD_RGB  },
 	{  40, "W500",	&wvga_w500,  180, 1, LCD_RGB  },
 	{   4, "W50",	&wvga_w50,     0, 0, LCD_RGB  },
 	{ 100, "YZ43",	&wvga_yz43,  180, 1, LCD_RGB  },
