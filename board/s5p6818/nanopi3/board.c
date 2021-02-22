@@ -19,6 +19,7 @@
 
 #include <config.h>
 #include <common.h>
+#include <memalign.h>
 #ifdef CONFIG_PWM_NX
 #include <pwm.h>
 #endif
@@ -40,6 +41,17 @@ DECLARE_GLOBAL_DATA_PTR;
 
 enum gpio_group {
 	gpio_a, gpio_b, gpio_c, gpio_d, gpio_e,
+};
+
+/* copy from android bootloader_message.h */
+struct bootloader_message {
+	char command[32];
+	char status[32];
+	char recovery[768];
+
+	char stage[32];
+	char slot_suffix[32];
+	char reserved[192];
 };
 
 #ifdef CONFIG_PWM_NX
@@ -423,6 +435,108 @@ __exit:
 		saveenv();
 }
 
+static int bd_set_recovery_wipe_data(void)
+{
+	char devpart[64] = { 0, };
+	block_dev_desc_t *desc;
+	disk_partition_t info;
+	int rootdev, miscpart, blkcnt, ret;
+	struct bootloader_message *bmsg;
+	ALLOC_CACHE_ALIGN_BUFFER(u8, buf,
+			DIV_ROUND_UP(sizeof(struct bootloader_message),
+				1024) * 1024);
+	const char *bootargs = getenv("bootargs");
+
+	if (!strstr(bootargs, "androidboot."))
+		return -1;
+
+	rootdev = getenv_ulong("rootdev", 0, CONFIG_ROOT_DEV);
+	miscpart = getenv_ulong("miscpart", 0, 6);
+	snprintf(devpart, ARRAY_SIZE(devpart), "%d:%d", rootdev, miscpart);
+
+	ret = get_device_and_partition("mmc", devpart, &desc, &info, 0);
+
+	/* Android misc partition should be 4MB */
+	if (ret < 0 || info.size > 8192)
+		return -1;
+
+	blkcnt = DIV_ROUND_UP(sizeof(struct bootloader_message), 1024) * 2;
+	ret = desc->block_read(rootdev, info.start, blkcnt, buf);
+	if (ret != blkcnt)
+		return -1;
+
+	bmsg = (struct bootloader_message *)buf;
+	if (strlen(bmsg->command) > 0)
+		return 0;
+
+	strcpy(bmsg->command, "boot-recovery");
+	bmsg->status[0] = 0;
+	strcpy(bmsg->recovery, "recovery\n--wipe_data");
+
+	ret = desc->block_write(rootdev, info.start, blkcnt, buf);
+	if (ret != blkcnt) {
+		printf("Error setting bootloader message\n");
+		return -1;
+	}
+
+	return 1;
+}
+
+static void bd_check_recovery_key(void)
+{
+	int alive_0, pin_status;
+	int i;
+
+	if (getenv_yesno("recovery_check") != 1)
+		return;
+
+#define SCR_ALIVEGPIOINPUTVALUE	(SCR_ALIVE_BASE + 0x11C)
+	alive_0 = readl(SCR_ALIVEGPIOINPUTVALUE) & 1;
+
+	/* GPIOB27 (hp-det) as input */
+	nx_gpio_set_pad_function(gpio_b, 27, 1);
+	nx_gpio_set_output_enable(gpio_b, 27, 0);
+
+	pin_status = nx_gpio_get_input_value(gpio_b, 27);
+	if (alive_0 || !pin_status)
+		return;
+
+	printf("checking recovery key...");
+
+	/* GPIOB12 (status_led) as output */
+	nx_gpio_set_pad_function(gpio_b, 12, 2);
+	nx_gpio_set_output_enable(gpio_b, 12, 1);
+
+	/* detecting falling edge */
+	nx_gpio_set_detect_mode(gpio_b, 27, 0x2);
+	nx_gpio_set_detect_enable(gpio_b, 27, 1);
+
+	for (i = 0; i < 2500; i++) {
+		alive_0 = readl(SCR_ALIVEGPIOINPUTVALUE) & 1;
+		if (alive_0)
+			break;
+
+		mdelay(1);
+		if (i == 500)
+			nx_gpio_set_output_value(gpio_b, 12, 1);
+	}
+
+	nx_gpio_set_output_value(gpio_b, 12, 0);
+	nx_gpio_set_detect_enable(gpio_b, 27, 0);
+	pin_status = nx_gpio_get_detect_status(gpio_b, 27, 1);
+
+	/* power key pressed 2.5s and gpio event detected */
+	if (i >= 2500 && pin_status) {
+		printf("\nenter recovery mode (wipe_data)\n");
+		onewire_set_backlight(80);
+		bd_set_recovery_wipe_data();
+		run_command("setenv initrd_name ramdisk-recovery.img; boot", 0);
+	}
+
+	printf("none\n");
+	return;
+}
+
 static void bd_check_reset(void)
 {
 	u32 reason;
@@ -493,6 +607,7 @@ int board_late_init(void)
 	printf("\n");
 
 	bd_check_reset();
+	bd_check_recovery_key();
 
 	return 0;
 }
