@@ -66,8 +66,6 @@ void *nx_gpio_get_base_address(u32 module_index);
 int nx_gpio_open_module(u32 module_index);
 int nx_gpio_close_module(u32 module_index);
 int nx_gpio_check_busy(u32 module_index);
-void nx_gpio_set_detect_enable(u32 module_index, u32 bit_number,
-						int detect_enb);
 void nx_gpio_set_pad_function(u32 module_index, u32 bit_number, u32 padfunc);
 void nx_gpio_set_pad_function32(u32 module_index, u32 msbvalue, u32 lsbvalue);
 int nx_gpio_get_pad_function(u32 module_index, u32 bit_number);
@@ -78,6 +76,8 @@ u32 nx_gpio_get_detect_enable32(u32 module_index);
 void nx_gpio_set_detect_enable(u32 module_index, u32 bit_number,
 			       int detect_enb);
 void nx_gpio_set_detect_enable32(u32 module_index, u32 enable_flag);
+void nx_gpio_set_detect_mode(u32 module_index, u32 bit_number, u32 mode);
+int nx_gpio_get_detect_status(u32 module_index, u32 bit_number, int do_clear);
 int nx_gpio_get_output_enable(u32 module_index, u32 bit_number);
 void nx_gpio_set_output_enable32(u32 module_index, int output_enb);
 u32 nx_gpio_get_output_enable32(u32 module_index);

@@ -172,6 +172,29 @@ void nx_gpio_set_detect_enable32(u32 module_index, u32 enable_flag)
 	writel(enable_flag, &pregister->gpioxdetenb);
 }
 
+void nx_gpio_set_detect_mode(u32 module_index, u32 bit_number, u32 mode)
+{
+	register struct nx_gpio_register_set *pregister;
+	/* 101 to 111 = Reserved */
+	if (mode > 0x4)
+		return;
+	pregister = __g_module_variables[module_index].pregister;
+	nx_gpio_set_bit2(&pregister->gpioxdetmode[bit_number / 16],
+			 bit_number % 16, mode & 0x3);
+	nx_gpio_set_bit(&pregister->gpioxdetmodeex, bit_number, mode >> 2);
+}
+
+int nx_gpio_get_detect_status(u32 module_index, u32 bit_number, int do_clear)
+{
+	register struct nx_gpio_register_set *pregister;
+	int status;
+	pregister = __g_module_variables[module_index].pregister;
+	status = nx_gpio_get_bit(readl(&pregister->gpioxdet), bit_number);
+	if (status && do_clear)
+		nx_gpio_set_bit(&pregister->gpioxdet, bit_number, 1);
+	return status;
+}
+
 int nx_gpio_get_output_enable(u32 module_index, u32 bit_number)
 {
 	register struct nx_gpio_register_set *pregister;
