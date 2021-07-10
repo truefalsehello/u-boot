@@ -59,6 +59,18 @@ static void s702_gpio_init(void)
 
 	nx_gpio_set_drive_strength(PAD_GPIO_A, 0, 2);
 
+	for (i = 1; i < 28; i++)
+		nx_gpio_set_drive_strength(PAD_GPIO_A, i, 1);
+}
+
+static void s70d_gpio_init(void)
+{
+	int i;
+
+	common_gpio_init();
+
+	nx_gpio_set_drive_strength(PAD_GPIO_A, 0, 2);
+
 	for (i = 1; i < 25; i++)
 		nx_gpio_set_drive_strength(PAD_GPIO_A, i, 0);
 
@@ -90,7 +102,12 @@ static void hd101_gpio_init(void)
 
 static void hd700_gpio_init(void)
 {
-	hd101_gpio_init();
+	int i;
+
+	for (i = 0; i < 25; i++)
+		nx_gpio_set_drive_strength(PAD_GPIO_A, i, 2);
+
+	nx_gpio_set_drive_strength(PAD_GPIO_A, 27, 1);
 }
 
 /* NXP display configs for supported LCD */
@@ -229,7 +246,7 @@ static struct nxp_lcd wvga_s70d = {
 		.inv_vsync = 1,
 		.inv_vden = 0,
 	},
-	.gpio_init = s702_gpio_init,
+	.gpio_init = s70d_gpio_init,
 };
 
 static struct nxp_lcd wvga_w500 = {
@@ -256,7 +273,7 @@ static struct nxp_lcd wvga_w500 = {
 		.inv_vsync = 1,
 		.inv_vden = 0,
 	},
-	.gpio_init = s702_gpio_init,
+	.gpio_init = s70d_gpio_init,
 };
 
 static struct nxp_lcd wvga_w50 = {
