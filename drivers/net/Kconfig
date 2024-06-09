@@ -13,6 +13,8 @@ config PHYLIB
 	help
 	  Enable Ethernet PHY (physical media interface) support.
 
+source "drivers/net/phy/Kconfig"
+
 menuconfig NETDEVICES
 	bool "Network device support"
 	depends on NET

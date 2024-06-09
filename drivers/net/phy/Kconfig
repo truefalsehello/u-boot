@@ -1,0 +1,4 @@
+config PHY_REALTEK
+    depends on PHYLIB
+    bool "RealTek RTL8211 Ethernet PHYs support"
+    default y if PHYLIB

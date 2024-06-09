@@ -20,6 +20,16 @@
 
 #define CONFIG_MACH_S5P6818	1
 
+#define CONFIG_ETHPRIME				"RTL8211"
+#define CONFIG_PHY_ADDR				7
+
+#define CONFIG_PHY_RESET_DELAY		10000	/* in usec */
+#define CONFIG_DW_ALTDESCRIPTOR
+#define CONFIG_DW_SEARCH_PHY
+#define CONFIG_DW_AUTONEG
+#define CONFIG_PHY_GIGE /* Include GbE speed/duplex detection */
+
+
 /*-----------------------------------------------------------------------
  *  System memory Configuration
  */
