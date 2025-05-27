@@ -441,7 +441,7 @@ static void reconfig_usbd(struct dwc2_udc *dev)
 
 	/* 5. Configure OTG Core to initial settings of device mode.*/
 	/* [][1: full speed(30Mhz) 0:high speed]*/
-	writel(EP_MISS_CNT(1) | DEV_SPEED_HIGH_SPEED_20, &reg->dcfg);
+	writel(EP_MISS_CNT(1) | DEV_SPEED_FULL_SPEED_11, &reg->dcfg);
 
 	mdelay(1);
 

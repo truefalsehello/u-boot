@@ -1047,7 +1047,7 @@ composite_resume(struct usb_gadget *gadget)
 }
 
 static struct usb_gadget_driver composite_driver = {
-	.speed		= USB_SPEED_HIGH,
+	.speed		= USB_SPEED_FULL,
 
 	.bind		= composite_bind,
 	.unbind         = composite_unbind,

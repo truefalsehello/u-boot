@@ -194,6 +194,7 @@ endif
 obj-$(CONFIG_CMD_FASTBOOT) += cmd_fastboot.o
 obj-$(CONFIG_CMD_FS_UUID) += cmd_fs_uuid.o
 
+obj-$(CONFIG_CMD_MINE) += cmd_mine.o
 obj-$(CONFIG_CMD_USB_MASS_STORAGE) += cmd_usb_mass_storage.o
 obj-$(CONFIG_CMD_THOR_DOWNLOAD) += cmd_thordown.o
 obj-$(CONFIG_NX_USBDOWN)        += cmd_usbdown.o

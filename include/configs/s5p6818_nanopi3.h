@@ -28,6 +28,8 @@
 #define CONFIG_DW_SEARCH_PHY
 #define CONFIG_DW_AUTONEG
 #define CONFIG_PHY_GIGE /* Include GbE speed/duplex detection */
+#define CONFIG_CMD_MINE
+#define CONFIG_USB_FUNCTION_MINE
 
 
 /*-----------------------------------------------------------------------
