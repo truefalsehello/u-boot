@@ -33,44 +33,24 @@ struct hid_descriptor
     u16 wDescriptorLength;
 } __attribute__((packed));
 
-static int x_count = 0;
-static int x_direction = 1;
+static int a_count = 0;
 
-static u8 x_movement_packet_right[] = {
-    0x01,             // Report ID = 1
-    0x00,             // 按钮无按下
-    0x0A, 0x00, 0x00, // X = +10, Y = 0
-    0x00              // 滚轮 = 0
-};
+static u8 down_a[] = {
+    0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-static u8 x_movement_packet_left[] = {
-    0x01,             // Report ID = 1
-    0x00,             // 按钮无按下（3bit 按键 + 5bit 填充）
-    0xF6, 0x0F, 0x00, // X = -10, Y = 0（打包3字节）
-    0x00              // 滚轮 = 0
-};
+static u8 up_a[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 static void mine_interrupt_complete(struct usb_ep *ep,
                                     struct usb_request *req)
 {
-    if ((++x_count) % 80 == 0)
-    {
-        x_direction = -x_direction;
-        x_count = 0;
-    }
-    if (x_direction > 0)
-    {
-        mine.ep_interrupt_req->buf = x_movement_packet_right;
-    }
-    else
-    {
-        mine.ep_interrupt_req->buf = x_movement_packet_left;
-    }
-    usb_ep_queue(mine.ep_interrupt, mine.ep_interrupt_req, GFP_ATOMIC);
+    printf("%s\n",__func__);
+    if((a_count++) < 15)
+        usb_ep_queue(mine.ep_interrupt, mine.ep_interrupt_req, GFP_ATOMIC);
 };
 
 static struct usb_string mine_strings[] = {
-    {MINE_STRING_INTERFACE, "Mine mouse"},
+    {MINE_STRING_INTERFACE, "Mine keyboard"},
     {}};
 
 static struct usb_gadget_strings mine_stringtab_en = {
@@ -87,7 +67,7 @@ static struct usb_interface_descriptor mine_intf_desc = {
     .bNumEndpoints = 1,
     .bInterfaceClass = USB_CLASS_HID,
     .bInterfaceSubClass = 0x01,
-    .bInterfaceProtocol = 0x02,
+    .bInterfaceProtocol = 0x01,
     .iInterface = MINE_STRING_INTERFACE};
 
 static struct usb_endpoint_descriptor mine_ep_desc = {
@@ -95,50 +75,11 @@ static struct usb_endpoint_descriptor mine_ep_desc = {
     .bDescriptorType = USB_DT_ENDPOINT,
     .bEndpointAddress = USB_DIR_IN,
     .bmAttributes = USB_ENDPOINT_XFER_INT,
-    .wMaxPacketSize = 6,
+    .wMaxPacketSize = 8,
     .bInterval = 0x0a};
 
-static u8 mouse_report_descriptor[] = {
-    0x05, 0x01, // Usage Page (Generic Desktop)
-    0x09, 0x02, // Usage (Mouse)
-    0xA1, 0x01, // Collection (Application)
-    0x85, 0x01, //   Report ID (1)
-
-    0x09, 0x01, //   Usage (Pointer)
-    0xA1, 0x00, //   Collection (Physical)
-
-    0x05, 0x09, //     Usage Page (Buttons)
-    0x19, 0x01, //     Usage Minimum (Button 1)
-    0x29, 0x03, //     Usage Maximum (Button 3)
-    0x15, 0x00, //     Logical Minimum (0)
-    0x25, 0x01, //     Logical Maximum (1)
-    0x95, 0x03, //     Report Count (3)
-    0x75, 0x01, //     Report Size (1)
-    0x81, 0x02, //     Input (Data, Variable, Absolute) - 3 bits for 3 buttons
-
-    0x95, 0x01, //     Report Count (1)
-    0x75, 0x05, //     Report Size (5)
-    0x81, 0x01, //     Input (Constant) - Padding to align to byte boundary
-
-    0x05, 0x01,       //     Usage Page (Generic Desktop)
-    0x09, 0x30,       //     Usage (X)
-    0x09, 0x31,       //     Usage (Y)
-    0x16, 0x00, 0xF8, //     Logical Minimum (-2048)
-    0x26, 0xFF, 0x07, //     Logical Maximum (2047)
-    0x75, 0x0C,       //     Report Size (12)
-    0x95, 0x02,       //     Report Count (2)
-    0x81, 0x06,       //     Input (Data, Variable, Relative) - 12-bit X, Y
-
-    0x09, 0x38, //     Usage (Wheel)
-    0x15, 0x81, //     Logical Minimum (-127)
-    0x25, 0x7F, //     Logical Maximum (127)
-    0x75, 0x08, //     Report Size (8)
-    0x95, 0x01, //     Report Count (1)
-    0x81, 0x06, //     Input (Data, Variable, Relative)
-
-    0xC0, //   End Collection (Physical)
-    0xC0  // End Collection (Application)
-};
+static u8 keyboard_report_descriptor[] = {
+    0x05, 0x01, 0x09, 0x06, 0xA1, 0x01, 0x05, 0x07, 0x19, 0xE0, 0x29, 0xE7, 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 0x95, 0x08, 0x81, 0x02, 0x95, 0x01, 0x75, 0x08, 0x81, 0x01, 0x95, 0x03, 0x75, 0x01, 0x05, 0x08, 0x19, 0x01, 0x29, 0x03, 0x91, 0x02, 0x95, 0x01, 0x75, 0x05, 0x91, 0x01, 0x95, 0x06, 0x75, 0x08, 0x15, 0x00, 0x26, 0xFF, 0x00, 0x05, 0x07, 0x19, 0x00, 0x2A, 0xFF, 0x00, 0x81, 0x00, 0xC0};
 
 static struct hid_descriptor mine_report_desc = {
     .bLength = sizeof(struct hid_descriptor),
@@ -147,7 +88,7 @@ static struct hid_descriptor mine_report_desc = {
     .bCountryCode = 0x00, // No localization
     .bNumDescriptors = 0x01,
     .bReportDescriptorType = USB_DT_REPORT,
-    .wDescriptorLength = sizeof(mouse_report_descriptor),
+    .wDescriptorLength = sizeof(keyboard_report_descriptor),
 };
 
 static struct usb_descriptor_header *mine_function[] = {
@@ -207,8 +148,8 @@ static int mine_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
         printf("can't allocate request\n");
         return 0;
     }
-    mine.ep_interrupt_req->buf = x_movement_packet_right;
-    mine.ep_interrupt_req->length = sizeof(x_movement_packet_right);
+    mine.ep_interrupt_req->buf = down_a;
+    mine.ep_interrupt_req->length = sizeof(down_a);
     mine.ep_interrupt_req->complete = mine_interrupt_complete;
     rc = usb_ep_enable(mine.ep_interrupt, &mine_ep_desc);
     if (rc){
@@ -230,10 +171,9 @@ static int mine_setup(struct usb_function *f,
         switch (ctrl->wValue >> 8)
         {
         case USB_DT_REPORT:
-            memcpy(mine.ep0req->buf, mouse_report_descriptor, sizeof(mouse_report_descriptor));
-            mine.ep0req->length = sizeof(mouse_report_descriptor);
+            memcpy(mine.ep0req->buf, keyboard_report_descriptor, sizeof(keyboard_report_descriptor));
+            mine.ep0req->length = sizeof(keyboard_report_descriptor);
             rc = usb_ep_queue(mine.ep0, mine.ep0req, GFP_ATOMIC);
-
             return rc;
         }
         break;
@@ -297,9 +237,9 @@ static int mine_add(struct usb_configuration *c)
 
     strings = c->cdev->driver->strings[0]->strings;
     strings[0].s = "My company";
-    strings[1].s = "Example mouse";
+    strings[1].s = "Example keyboard";
 
-    g_dnl_set_serialnumber("1234567890123456789012345678901");
+    g_dnl_set_serialnumber("9876543210987654321098765432101");
 
     if (mine_strings[MINE_STRING_INTERFACE].id == 0)
     {
@@ -321,4 +261,4 @@ static int mine_add(struct usb_configuration *c)
     return usb_add_function(c, &mine.func);
 }
 
-DECLARE_GADGET_BIND_CALLBACK(usb_mine, mine_add);
+DECLARE_GADGET_BIND_CALLBACK(usb_mine_k, mine_add);

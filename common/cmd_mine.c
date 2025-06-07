@@ -61,7 +61,7 @@ int do_mine(struct cmd_tbl_s *cmdtp, int flag, int argc, char *const argv[])
         return CMD_RET_FAILURE;
     }
 
-    rc = g_dnl_register("usb_mine");
+    rc = g_dnl_register("usb_mine_k");
     if (rc)
     {
         error("g_dnl_register failed");
