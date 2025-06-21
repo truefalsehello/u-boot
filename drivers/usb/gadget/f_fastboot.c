@@ -1436,6 +1436,7 @@ static int fastboot_add(struct usb_configuration *c)
 	}
 
 	f_fb->usb_function.name = "f_fastboot";
+	f_fb->usb_function.descriptors = fb_runtime_descs;
 	f_fb->usb_function.hs_descriptors = fb_runtime_descs;
 	f_fb->usb_function.bind = fastboot_bind;
 	f_fb->usb_function.unbind = fastboot_unbind;

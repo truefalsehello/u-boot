@@ -257,6 +257,7 @@ static int count_configs(struct usb_composite_dev *cdev, unsigned type)
 		if (type == USB_DT_DEVICE_QUALIFIER)
 			hs = !hs;
 	}
+
 	list_for_each_entry(c, &cdev->configs, list) {
 		/* ignore configs that won't work at this speed */
 		if (hs) {
@@ -268,6 +269,7 @@ static int count_configs(struct usb_composite_dev *cdev, unsigned type)
 		}
 		count++;
 	}
+
 	return count;
 }
 
@@ -1047,7 +1049,7 @@ composite_resume(struct usb_gadget *gadget)
 }
 
 static struct usb_gadget_driver composite_driver = {
-	.speed		= USB_SPEED_FULL,
+	.speed		= USB_SPEED_HIGH,
 
 	.bind		= composite_bind,
 	.unbind         = composite_unbind,

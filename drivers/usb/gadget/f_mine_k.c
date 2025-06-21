@@ -215,8 +215,14 @@ autoconf_fail:
 static void mine_unbind(struct usb_configuration *c, struct usb_function *f)
 {
     printf("%s\n", __func__);
-    usb_ep_free_request(mine.ep_interrupt, mine.ep_interrupt_req);
-    free(mine.func.descriptors);
+    if(mine.ep_interrupt_req){
+        usb_ep_free_request(mine.ep_interrupt, mine.ep_interrupt_req);
+        mine.ep_interrupt_req = NULL;
+    }
+    if(mine.func.descriptors){
+        free(mine.func.descriptors);
+        mine.func.descriptors = NULL;
+    }
 }
 
 static int mine_add(struct usb_configuration *c)
